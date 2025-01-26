@@ -17,13 +17,15 @@ namespace Client
     {
         private readonly InstalledSoftwareService _installedSoftwareService;
         private readonly SoftwareSearchService _searchService;
+        private readonly AppConfigService _configService;
         private ObservableCollection<Software> softwares;
         private List<Software> _allSoftwares;
 
         public MainWindow()
         {
             InitializeComponent();
-            _installedSoftwareService = new InstalledSoftwareService();
+            _configService = new AppConfigService();
+            _installedSoftwareService = new InstalledSoftwareService(_configService);
             _searchService = new SoftwareSearchService();
             softwares = new ObservableCollection<Software>();
             _allSoftwares = new List<Software>();
