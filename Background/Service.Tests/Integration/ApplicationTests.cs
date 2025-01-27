@@ -207,4 +207,93 @@ public class ApplicationTests : IAsyncLifetime
         // Assert
         Assert.False(result);
     }
+
+    [Fact]
+    public async Task GetPaginatedApplications_ShouldReturnCorrectPage()
+    {
+        // Arrange
+        var applications = new List<Application>();
+        for (int i = 1; i <= 25; i++)
+        {
+            applications.Add(new Application 
+            { 
+                Name = $"应用{i}", 
+                Version = "1.0", 
+                Description = $"描述{i}" 
+            });
+        }
+        await _applications.InsertManyAsync(applications);
+
+        var request = new PaginationRequest 
+        { 
+            PageSize = 10, 
+            PageIndex = 2 
+        };
+
+        // Act
+        var result = await _applicationService.GetPaginatedAsync(request);
+
+        // Assert
+        Assert.Equal(25, result.TotalCount);
+        Assert.Equal(3, result.TotalPages);
+        Assert.Equal(10, result.Items.Count);
+        Assert.Equal(2, result.PageIndex);
+        Assert.Equal(10, result.PageSize);
+        Assert.Equal("应用11", result.Items[0].Name);
+        Assert.Equal("应用20", result.Items[9].Name);
+    }
+
+    [Fact]
+    public async Task GetPaginatedApplications_LastPage_ShouldReturnRemainingItems()
+    {
+        // Arrange
+        var applications = new List<Application>();
+        for (int i = 1; i <= 25; i++)
+        {
+            applications.Add(new Application 
+            { 
+                Name = $"应用{i}", 
+                Version = "1.0", 
+                Description = $"描述{i}" 
+            });
+        }
+        await _applications.InsertManyAsync(applications);
+
+        var request = new PaginationRequest 
+        { 
+            PageSize = 10, 
+            PageIndex = 3 
+        };
+
+        // Act
+        var result = await _applicationService.GetPaginatedAsync(request);
+
+        // Assert
+        Assert.Equal(25, result.TotalCount);
+        Assert.Equal(3, result.TotalPages);
+        Assert.Equal(5, result.Items.Count);
+        Assert.Equal(3, result.PageIndex);
+        Assert.Equal(10, result.PageSize);
+        Assert.Equal("应用21", result.Items[0].Name);
+        Assert.Equal("应用25", result.Items[4].Name);
+    }
+
+    [Fact]
+    public async Task GetPaginatedApplications_EmptyCollection_ShouldReturnEmptyResult()
+    {
+        // Arrange
+        var request = new PaginationRequest 
+        { 
+            PageSize = 10, 
+            PageIndex = 1 
+        };
+
+        // Act
+        var result = await _applicationService.GetPaginatedAsync(request);
+
+        // Assert
+        Assert.Equal(0, result.TotalCount);
+        Assert.Equal(0, result.TotalPages);
+        Assert.Empty(result.Items);
+    }
 } 

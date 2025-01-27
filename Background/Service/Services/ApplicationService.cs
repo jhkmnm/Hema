@@ -82,4 +82,27 @@ public class ApplicationService
         var result = await _applications.DeleteOneAsync(x => x.Id == id);
         return result.DeletedCount > 0;
     }
+
+    /// <summary>
+    /// 分页获取应用程序列表
+    /// </summary>
+    public async Task<PaginatedResult<Application>> GetPaginatedAsync(PaginationRequest request)
+    {
+        var filter = Builders<Application>.Filter.Empty;
+        var totalCount = await _applications.CountDocumentsAsync(filter);
+        
+        var items = await _applications.Find(filter)
+            .Skip((request.PageIndex - 1) * request.PageSize)
+            .Limit(request.PageSize)
+            .ToListAsync();
+
+        return new PaginatedResult<Application>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            PageIndex = request.PageIndex,
+            PageSize = request.PageSize,
+            TotalPages = (int)Math.Ceiling(totalCount / (double)request.PageSize)
+        };
+    }
 } 

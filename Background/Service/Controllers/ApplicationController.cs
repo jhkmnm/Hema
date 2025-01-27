@@ -89,4 +89,14 @@ public class ApplicationController : ControllerBase
         }
         return NoContent();
     }
+
+    /// <summary>
+    /// 分页获取应用程序列表
+    /// </summary>
+    [HttpGet("paged")]
+    public async Task<ActionResult<PaginatedResult<Application>>> GetPaginated([FromQuery] PaginationRequest request)
+    {
+        var result = await _applicationService.GetPaginatedAsync(request);
+        return Ok(result);
+    }
 } 

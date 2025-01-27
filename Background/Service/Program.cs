@@ -29,6 +29,17 @@ builder.Services.AddScoped<UserService>();
 // 添加应用程序服务
 builder.Services.AddScoped<ApplicationService>();
 
+// 添加CORS服务
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(builder =>
+    {
+        builder.WithOrigins("http://localhost:8080")
+               .AllowAnyHeader()
+               .AllowAnyMethod();
+    });
+});
+
 var app = builder.Build();
 
 // 配置HTTP请求管道
@@ -41,6 +52,9 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
+
+// 启用CORS
+app.UseCors();
 
 // 初始化种子数据
 using (var scope = app.Services.CreateScope())
