@@ -55,32 +55,12 @@ namespace Client.Services
                 return _originalList.ToList();
             }
 
-            using var reader = DirectoryReader.Open(_directory);
-            var searcher = new IndexSearcher(reader);
-
-            var nameQuery = new FuzzyQuery(new Term("name", keyword.ToLower()), 2);
-            var descQuery = new FuzzyQuery(new Term("description", keyword.ToLower()), 2);
-
-            var combinedQuery = new BooleanQuery
-            {
-                { nameQuery, Occur.SHOULD },
-                { descQuery, Occur.SHOULD }
-            };
-
-            var hits = searcher.Search(combinedQuery, 50).ScoreDocs;
-            
-            var results = new List<Software>();
-            foreach (var hit in hits)
-            {
-                var doc = searcher.Doc(hit.Doc);
-                var software = _originalList.FirstOrDefault(s => s.Name == doc.Get("id"));
-                if (software != null)
-                {
-                    results.Add(software);
-                }
-            }
-
-            return results;
+            // 使用包含匹配而不是模糊匹配
+            keyword = keyword.ToLower();
+            return _originalList.Where(s => 
+                (s.Name?.ToLower().Contains(keyword) == true) || 
+                (s.Description?.ToLower().Contains(keyword) == true)
+            ).ToList();
         }
     }
 } 

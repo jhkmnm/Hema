@@ -5,6 +5,7 @@ using Client.Models;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using System.IO;
+using System.Linq;
 
 namespace Client.Services
 {
@@ -25,6 +26,33 @@ namespace Client.Services
         public List<Software> GetInstalledSoftware()
         {
             var softwareList = new List<Software>();
+            // 需要过滤的关键词
+            var filterKeywords = new[]
+            {
+                "Security Update",
+                "Update for",
+                "Hotfix",
+                "Service Pack",
+                "Driver",
+                "驱动",
+                "更新程序",
+                "安全更新",
+                "修补程序",
+                "补丁",
+                "KB"
+            };
+
+            // 需要过滤的发布者
+            var filterPublishers = new[]
+            {
+                "Microsoft Corporation",
+                "Microsoft Windows",
+                "Windows",
+                "Intel",
+                "NVIDIA",
+                "AMD",
+                "Realtek"
+            };
 
             foreach (string registryPath in registryPaths)
             {
@@ -41,6 +69,20 @@ namespace Client.Services
                                     try
                                     {
                                         string displayName = subKey.GetValue("DisplayName") as string;
+                                        if (string.IsNullOrEmpty(displayName))
+                                            continue;
+
+                                        string publisher = subKey.GetValue("Publisher") as string;
+                                        
+                                        // 过滤系统更新和驱动
+                                        if (filterKeywords.Any(k => displayName.Contains(k, StringComparison.OrdinalIgnoreCase)))
+                                            continue;
+
+                                        // 过滤特定发布者的软件
+                                        if (!string.IsNullOrEmpty(publisher) && 
+                                            filterPublishers.Any(p => publisher.Contains(p, StringComparison.OrdinalIgnoreCase)))
+                                            continue;
+
                                         string displayVersion = subKey.GetValue("DisplayVersion") as string;
                                         string installLocation = subKey.GetValue("InstallLocation") as string;
                                         string uninstallString = subKey.GetValue("UninstallString") as string;
@@ -50,17 +92,15 @@ namespace Client.Services
                                             description = subKey.GetValue("DisplayDesc") as string;
                                         }
 
-                                        if (!string.IsNullOrEmpty(displayName))
+                                        softwareList.Add(new Software
                                         {
-                                            softwareList.Add(new Software
-                                            {
-                                                Name = displayName,
-                                                Version = displayVersion ?? "未知版本",
-                                                Description = description ?? "暂无描述",
-                                                InstallPath = installLocation ?? "未知路径",
-                                                UninstallString = uninstallString
-                                            });
-                                        }
+                                            Name = displayName,
+                                            Version = displayVersion ?? "未知版本",
+                                            Description = description ?? "暂无描述",
+                                            InstallPath = installLocation ?? "未知路径",
+                                            UninstallString = uninstallString,
+                                            IsInstalled = true
+                                        });
                                     }
                                     catch (Exception)
                                     {

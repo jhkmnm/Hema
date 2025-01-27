@@ -10,6 +10,7 @@ using Client.Services;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace Client
 {
@@ -20,6 +21,7 @@ namespace Client
         private readonly AppConfigService _configService;
         private ObservableCollection<Software> softwares;
         private List<Software> _allSoftwares;
+        private Button _currentSelectedButton;
 
         public MainWindow()
         {
@@ -32,8 +34,22 @@ namespace Client
             dataGrid.ItemsSource = softwares;
         }
 
+        private void SelectNavButton(Button button)
+        {
+            if (_currentSelectedButton != null)
+            {
+                _currentSelectedButton.Background = Brushes.Transparent;
+                _currentSelectedButton.Foreground = (Brush)new BrushConverter().ConvertFrom("#666666");
+            }
+
+            _currentSelectedButton = button;
+            _currentSelectedButton.Background = (Brush)new BrushConverter().ConvertFrom("#E3F2FD");
+            _currentSelectedButton.Foreground = (Brush)new BrushConverter().ConvertFrom("#2B579A");
+        }
+
         private void btnDataManagement_Click(object sender, RoutedEventArgs e)
         {
+            SelectNavButton(sender as Button);
             // 数据管理按钮点击事件
         }
 
@@ -86,14 +102,14 @@ namespace Client
 
         private void btnInstalledSoftware_Click(object sender, RoutedEventArgs e)
         {
+            SelectNavButton(sender as Button);
+            
             try
             {
                 Mouse.OverrideCursor = Cursors.Wait;
                 _allSoftwares = _installedSoftwareService.GetInstalledSoftware();
                 _searchService.UpdateSearchIndex(_allSoftwares);
-                
                 UpdateSoftwareList(_allSoftwares);
-                MessageBox.Show($"成功加载 {_allSoftwares.Count} 个已安装软件", "成功", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
@@ -190,6 +206,18 @@ namespace Client
             {
                 softwares.Add(software);
             }
+        }
+
+        private void btnSoftwareList_Click(object sender, RoutedEventArgs e)
+        {
+            SelectNavButton(sender as Button);
+            // 其他处理逻辑
+        }
+
+        private void btnSettings_Click(object sender, RoutedEventArgs e)
+        {
+            SelectNavButton(sender as Button);
+            // 其他处理逻辑
         }
     }
 } 
