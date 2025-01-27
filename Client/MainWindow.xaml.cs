@@ -11,6 +11,8 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Net.Http.Json;
+using System.Net.Http;
 
 namespace Client
 {
@@ -22,6 +24,8 @@ namespace Client
         private ObservableCollection<Software> softwares;
         private List<Software> _allSoftwares;
         private Button _currentSelectedButton;
+        private PaginationRequest _paginationRequest = new() { PageSize = 10, PageIndex = 1 };
+        private int _totalPages = 1;
 
         public MainWindow()
         {
@@ -32,6 +36,21 @@ namespace Client
             softwares = new ObservableCollection<Software>();
             _allSoftwares = new List<Software>();
             dataGrid.ItemsSource = softwares;
+
+            // 初始化时加载数据
+            Loaded += MainWindow_Loaded;
+        }
+
+        private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            // 选中软件列表按钮
+            SelectNavButton(btnSoftwareList);
+            
+            // 加载已安装软件信息
+            var installedSoftware = _installedSoftwareService.GetInstalledSoftware();
+            
+            // 加载软件列表并比较版本
+            await LoadSoftwareList(installedSoftware);
         }
 
         private void SelectNavButton(Button button)
@@ -100,16 +119,56 @@ namespace Client
             }
         }
 
-        private void btnInstalledSoftware_Click(object sender, RoutedEventArgs e)
+        private async void btnInstalledSoftware_Click(object sender, RoutedEventArgs e)
         {
             SelectNavButton(sender as Button);
-            
+            await LoadInstalledSoftwareList();
+        }
+
+        private async Task LoadInstalledSoftwareList()
+        {
             try
             {
                 Mouse.OverrideCursor = Cursors.Wait;
-                _allSoftwares = _installedSoftwareService.GetInstalledSoftware();
-                _searchService.UpdateSearchIndex(_allSoftwares);
-                UpdateSoftwareList(_allSoftwares);
+
+                // 获取已安装软件列表
+                var installedSoftware = _installedSoftwareService.GetInstalledSoftware();
+
+                // 获取软件库中的软件列表
+                using var client = new HttpClient();
+                var response = await client.GetAsync("http://localhost:5000/api/Application");
+                List<Software> repositorySoftware = new();
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    repositorySoftware = await response.Content.ReadFromJsonAsync<List<Software>>() ?? new();
+                }
+
+                // 更新已安装软件的信息
+                foreach (var software in installedSoftware)
+                {
+                    var repoSoftware = repositorySoftware.FirstOrDefault(s => 
+                        s.Name.Equals(software.Name, StringComparison.OrdinalIgnoreCase));
+                    
+                    if (repoSoftware != null)
+                    {
+                        software.ExistsInRepository = true;
+                        software.Version = repoSoftware.Version;  // 软件库中的版本
+                        software.SetupFileName = repoSoftware.SetupFileName;
+                        software.OfficialUrl = repoSoftware.OfficialUrl;
+                    }
+                    else
+                    {
+                        software.ExistsInRepository = false;
+                    }
+                }
+
+                foreach (var software in installedSoftware)
+                {
+                    software.IsInstalledList = true;  // 标记为已安装列表视图
+                }
+
+                UpdateSoftwareList(installedSoftware);
             }
             catch (Exception ex)
             {
@@ -208,16 +267,148 @@ namespace Client
             }
         }
 
-        private void btnSoftwareList_Click(object sender, RoutedEventArgs e)
+        private async void btnSoftwareList_Click(object sender, RoutedEventArgs e)
         {
             SelectNavButton(sender as Button);
-            // 其他处理逻辑
+            await LoadSoftwareList();
+        }
+
+        private async Task LoadSoftwareList(List<Software> installedSoftware = null)
+        {
+            try
+            {
+                Mouse.OverrideCursor = Cursors.Wait;
+                
+                using var client = new HttpClient();
+                var response = await client.GetAsync(
+                    $"http://localhost:5000/api/Application/paged?pageSize={_paginationRequest.PageSize}&pageIndex={_paginationRequest.PageIndex}");
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<PaginatedResult<Software>>();
+                    if (result != null)
+                    {
+                        foreach (var software in result.Items)
+                        {
+                            software.IsInstalledList = false;  // 标记为软件列表视图
+                            var installed = installedSoftware?.FirstOrDefault(s => 
+                                s.Name.Equals(software.Name, StringComparison.OrdinalIgnoreCase));
+                            
+                            if (installed != null)
+                            {
+                                software.IsInstalled = true;
+                                software.InstalledVersion = installed.Version;
+                                software.InstallPath = installed.InstallPath;
+                                software.UninstallString = installed.UninstallString;
+                            }
+                        }
+
+                        UpdateSoftwareList(result.Items);
+                        _totalPages = result.TotalPages;
+                        UpdatePaginationControls();
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("获取软件列表失败", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"加载软件列表时出错：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                Mouse.OverrideCursor = null;
+            }
+        }
+
+        private void UpdatePaginationControls()
+        {
+            txtCurrentPage.Text = _paginationRequest.PageIndex.ToString();
+            txtTotalPages.Text = _totalPages.ToString();
+            btnPrevPage.IsEnabled = _paginationRequest.PageIndex > 1;
+            btnNextPage.IsEnabled = _paginationRequest.PageIndex < _totalPages;
+        }
+
+        private async void btnPrevPage_Click(object sender, RoutedEventArgs e)
+        {
+            if (_paginationRequest.PageIndex > 1)
+            {
+                _paginationRequest.PageIndex--;
+                await LoadSoftwareList();
+            }
+        }
+
+        private async void btnNextPage_Click(object sender, RoutedEventArgs e)
+        {
+            if (_paginationRequest.PageIndex < _totalPages)
+            {
+                _paginationRequest.PageIndex++;
+                await LoadSoftwareList();
+            }
         }
 
         private void btnSettings_Click(object sender, RoutedEventArgs e)
         {
             SelectNavButton(sender as Button);
             // 其他处理逻辑
+        }
+
+        private void OpenButton_Click(object sender, RoutedEventArgs e)
+        {
+            var button = (Button)sender;
+            var software = (Software)button.DataContext;
+
+            try
+            {
+                if (!string.IsNullOrEmpty(software.InstallPath))
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = software.InstallPath,
+                        UseShellExecute = true
+                    });
+                }
+                else
+                {
+                    MessageBox.Show("无法找到软件安装路径", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"启动软件失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async void UpdateButton_Click(object sender, RoutedEventArgs e)
+        {
+            var button = (Button)sender;
+            var software = (Software)button.DataContext;
+
+            try
+            {
+                Mouse.OverrideCursor = Cursors.Wait;
+                button.IsEnabled = false;
+
+                var success = await _installedSoftwareService.InstallSoftware(software);
+                
+                if (success)
+                {
+                    software.IsInstalled = true;
+                    software.InstalledVersion = software.Version;
+                    MessageBox.Show("更新命令已执行。", "成功", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"更新失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                button.IsEnabled = true;
+                Mouse.OverrideCursor = null;
+            }
         }
     }
 } 

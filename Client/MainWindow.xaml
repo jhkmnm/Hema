@@ -191,69 +191,166 @@
             </Border>
 
             <!-- 数据网格 -->
-            <DataGrid x:Name="dataGrid" 
-                      Grid.Row="1" 
-                      Margin="20"
-                      AutoGenerateColumns="False" 
-                      CanUserAddRows="False"
-                      BorderThickness="1"
-                      BorderBrush="#E1E1E1"
-                      RowHeaderWidth="0"
-                      Background="White"
-                      VerticalGridLinesBrush="#E1E1E1"
-                      HorizontalGridLinesBrush="#E1E1E1"
-                      AlternatingRowBackground="#F9F9F9">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="软件名称" Binding="{Binding Name}" Width="2*"/>
-                    <DataGridTextColumn Header="版本号" Binding="{Binding Version}" Width="*"/>
-                    <DataGridTextColumn Header="描述" Binding="{Binding Description}" Width="3*"/>
-                    <DataGridTextColumn Header="安装路径" Binding="{Binding InstallPath}" Width="2*"/>
-                    <DataGridTemplateColumn Header="操作" Width="160">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal">
-                                    <Button Content="安装" 
-                                            Click="InstallButton_Click"
-                                            Margin="2"
-                                            Padding="10,3"
-                                            Background="#4CAF50"
-                                            Foreground="White"
-                                            BorderThickness="0"
-                                            Visibility="{Binding IsInstalled, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
-                                        <Button.Style>
-                                            <Style TargetType="Button">
-                                                <Style.Triggers>
-                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter Property="Background" Value="#388E3C"/>
-                                                    </Trigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Button.Style>
-                                    </Button>
-                                    <Button Content="卸载" 
-                                            Click="UninstallButton_Click"
-                                            Margin="2"
-                                            Padding="10,3"
-                                            Background="#FF4444"
-                                            Foreground="White"
-                                            BorderThickness="0"
-                                            Visibility="{Binding IsInstalled, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                        <Button.Style>
-                                            <Style TargetType="Button">
-                                                <Style.Triggers>
-                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter Property="Background" Value="#CC0000"/>
-                                                    </Trigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Button.Style>
-                                    </Button>
-                                </StackPanel>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                </DataGrid.Columns>
-            </DataGrid>
+            <Grid Grid.Row="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <DataGrid x:Name="dataGrid" 
+                          Grid.Row="0" 
+                          Margin="20,20,20,0"
+                          AutoGenerateColumns="False" 
+                          CanUserAddRows="False"
+                          BorderThickness="1"
+                          BorderBrush="#E1E1E1"
+                          RowHeaderWidth="0"
+                          Background="White"
+                          VerticalGridLinesBrush="#E1E1E1"
+                          HorizontalGridLinesBrush="#E1E1E1"
+                          AlternatingRowBackground="#F9F9F9">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="软件名称" Binding="{Binding Name}" Width="2*"/>
+                        <DataGridTextColumn Header="版本号" Binding="{Binding Version}" Width="*"/>
+                        <DataGridTextColumn Header="描述" Binding="{Binding Description}" Width="3*"/>
+                        <DataGridTextColumn Header="安装路径" Binding="{Binding InstallPath}" Width="2*"/>
+                        <DataGridTemplateColumn Header="操作" Width="160">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <!-- 软件列表视图的按钮 -->
+                                        <Button Content="安装" 
+                                                Click="InstallButton_Click"
+                                                Margin="2"
+                                                Padding="10,3"
+                                                Background="#4CAF50"
+                                                Foreground="White"
+                                                BorderThickness="0"
+                                                Visibility="{Binding ShowInstallButton, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Style.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Background" Value="#388E3C"/>
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                            
+                                        <!-- 打开按钮 -->
+                                        <Button Content="打开" 
+                                                Click="OpenButton_Click"
+                                                Margin="2"
+                                                Padding="10,3"
+                                                Background="#2196F3"
+                                                Foreground="White"
+                                                BorderThickness="0"
+                                                Visibility="{Binding ShowOpenButton, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Style.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Background" Value="#1976D2"/>
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                                
+                                        <!-- 更新按钮(软件列表) -->
+                                        <Button Content="更新" 
+                                                Click="UpdateButton_Click"
+                                                Margin="2"
+                                                Padding="10,3"
+                                                Background="#FF9800"
+                                                Foreground="White"
+                                                BorderThickness="0"
+                                                Visibility="{Binding ShowUpdateButton, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Style.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Background" Value="#F57C00"/>
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+
+                                        <!-- 已安装列表视图的按钮 -->
+                                        <!-- 更新按钮(已安装列表) -->
+                                        <Button Content="更新" 
+                                                Click="UpdateButton_Click"
+                                                Margin="2"
+                                                Padding="10,3"
+                                                Background="#FF9800"
+                                                Foreground="White"
+                                                BorderThickness="0"
+                                                Visibility="{Binding ShowInstalledUpdateButton, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Style.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Background" Value="#F57C00"/>
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                            
+                                        <!-- 卸载按钮 -->
+                                        <Button Content="卸载" 
+                                                Click="UninstallButton_Click"
+                                                Margin="2"
+                                                Padding="10,3"
+                                                Background="#FF4444"
+                                                Foreground="White"
+                                                BorderThickness="0"
+                                                Visibility="{Binding ShowUninstallButton, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Style.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Background" Value="#CC0000"/>
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <!-- 分页控件 -->
+                <StackPanel Grid.Row="1" 
+                            Orientation="Horizontal" 
+                            HorizontalAlignment="Center"
+                            Margin="0,10,0,20">
+                    <Button Content="上一页" 
+                            x:Name="btnPrevPage"
+                            Click="btnPrevPage_Click"
+                            Style="{StaticResource ToolBarButtonStyle}"
+                            Width="80"/>
+                    <TextBlock x:Name="txtPageInfo" 
+                               VerticalAlignment="Center" 
+                               Margin="15,0">
+                        <Run Text="第"/>
+                        <Run x:Name="txtCurrentPage" Text="1"/>
+                        <Run Text="页 / 共"/>
+                        <Run x:Name="txtTotalPages" Text="1"/>
+                        <Run Text="页"/>
+                    </TextBlock>
+                    <Button Content="下一页" 
+                            x:Name="btnNextPage"
+                            Click="btnNextPage_Click"
+                            Style="{StaticResource ToolBarButtonStyle}"
+                            Width="80"/>
+                </StackPanel>
+            </Grid>
         </Grid>
     </Grid>
 </Window> 
