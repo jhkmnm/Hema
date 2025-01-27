@@ -2,12 +2,12 @@
   <div class="login-container">
     <el-card class="login-card">
       <h2>系统登录</h2>
-      <el-form :model="loginForm" :rules="rules" ref="loginForm">
+      <el-form :model="loginForm" :rules="rules" ref="loginFormRef">
         <el-form-item prop="username">
           <el-input 
             v-model="loginForm.username" 
             placeholder="用户名"
-            prefix-icon="el-icon-user">
+            :prefix-icon="User">
           </el-input>
         </el-form-item>
         <el-form-item prop="password">
@@ -15,11 +15,11 @@
             v-model="loginForm.password" 
             type="password" 
             placeholder="密码"
-            prefix-icon="el-icon-lock">
+            :prefix-icon="Lock">
           </el-input>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleLogin" :loading="loading" style="width: 100%">
+          <el-button type="primary" @click="handleSubmit" :loading="loading" style="width: 100%">
             登录
           </el-button>
         </el-form-item>
@@ -32,12 +32,14 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { User, Lock } from '@element-plus/icons-vue'
 import axios from 'axios'
 
 export default {
   name: 'LoginPage',
   setup() {
     const router = useRouter()
+    const loginFormRef = ref(null)
     const loginForm = reactive({
       username: '',
       password: ''
@@ -49,27 +51,35 @@ export default {
       password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
     }
 
-    const handleLogin = async () => {
-      try {
-        loading.value = true
-        const response = await axios.post('http://localhost:5000/api/auth/login', loginForm)
-        if (response.status === 200) {
-          localStorage.setItem('isAuthenticated', 'true')
-          ElMessage.success('登录成功')
-          router.push('/applications')
+    const handleSubmit = async () => {
+      if (!loginFormRef.value) return
+      
+      await loginFormRef.value.validate(async (valid) => {
+        if (!valid) return
+        try {
+          loading.value = true
+          const response = await axios.post('http://localhost:5000/api/auth/login', loginForm)
+          if (response.status === 200) {
+            localStorage.setItem('isAuthenticated', 'true')
+            ElMessage.success('登录成功')
+            router.push('/applications')
+          }
+        } catch (error) {
+          ElMessage.error('用户名或密码错误')
+        } finally {
+          loading.value = false
         }
-      } catch (error) {
-        ElMessage.error('用户名或密码错误')
-      } finally {
-        loading.value = false
-      }
+      })
     }
 
     return {
       loginForm,
+      loginFormRef,
       rules,
       loading,
-      handleLogin
+      handleSubmit,
+      User,
+      Lock
     }
   }
 }
