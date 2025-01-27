@@ -26,6 +26,9 @@ builder.Services.AddSingleton<IMongoDatabase>(sp =>
 // 添加用户服务
 builder.Services.AddScoped<UserService>();
 
+// 添加应用程序服务
+builder.Services.AddScoped<ApplicationService>();
+
 var app = builder.Build();
 
 // 配置HTTP请求管道
